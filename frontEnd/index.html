@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+</style>
+<body>
+    <input type="file" onchange="fileChange(event)" accept="application/pdf" accept=".pdf">
+    <div>
+        <span>当前压缩质量：</span>
+        <select name="" id="quality"></select>
+    </div>
+    <div style="margin-top: 20px;">
+        <button onclick="handleCompress()" class="compress-btn">上传压缩</button>
+    </div>
+    <script>
+        let currentFile = null
+        const compressBtn = document.querySelector('.compress-btn')
+        const selectEl = document.querySelector('#quality')
+        const options = [
+        { label: '默认', value: 'default' },
+        { label: '低分辨率', value: 'screen' },
+        { label: '中等分辨率', value: 'ebook' },
+        { label: '高分辨率', value: 'printer' },
+        { label: '最高分辨率', value: 'prepress' }
+        ];
+        options.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.value;
+            optionElement.textContent = option.label;
+            selectEl.appendChild(optionElement);
+        });
+        const initialValue = 'ebook'; // 初始选中项的值
+        selectEl.value = initialValue;
+
+        function fileChange(event) {
+            currentFile = event.target.files[0]
+        }
+        function handleCompress() {
+            if(!currentFile) {
+                alert('先选择个文件')
+            } else {
+                compressBtn.setAttribute('disabled', true)
+                const formData = new FormData();
+                formData.append('file', currentFile);
+                formData.append('quality', selectEl.value)
+                fetch('http://localhost:3000/compress', {
+                    method: 'POST',
+                    body: formData,
+                    responseType: 'blob'
+                })
+                .then((res) => res.blob())
+                .then((blob) => {
+                    const title = options.find(i => i.value === selectEl.value).label
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    const name = currentFile.name.replace('.pdf', '') + `-${title}`
+                    link.download = `${name}.pdf`; 
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    compressBtn.removeAttribute('disabled'); 
+                })
+                .catch((error) => {
+                    compressBtn.removeAttribute('disabled'); 
+                    console.error('下载文件时出错:', error);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
