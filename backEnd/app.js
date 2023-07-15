@@ -16,7 +16,11 @@ app.post('/compress', upload.single('file'), async (req, res) => {
         const inputFilePath = req.file.path; // 上传的PDF文件路径
         const outputFilePath = './output/compressed.pdf'; // 压缩后的PDF文件路径
         // 执行 Ghostscript 命令行来压缩 PDF
-        const command = `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/${quality} -dNOPAUSE -dQUIET -dBATCH -sOutputFile=${outputFilePath} ${inputFilePath}`;
+        let sys = 'gs'
+        if (process.platform.toLowerCase().includes('win')) {
+            sys = 'gswin64 '
+        }
+        const command = `${sys} -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/${quality} -dNOPAUSE -dQUIET -dBATCH -sOutputFile=${outputFilePath} ${inputFilePath}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 console.error('压缩PDF文件出错', error);
